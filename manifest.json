@@ -1,0 +1,10 @@
+{
+  "name": "보라카이 가족여행",
+  "short_name": "보라카이",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f8f9",
+  "theme_color": "#0ea5b7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
