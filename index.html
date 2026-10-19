@@ -32,8 +32,8 @@
     <button data-tab="memories"><span>📸</span>추억</button>
   </nav>
 
-  <dialog id="modal">
-    <form method="dialog" id="modalForm">
+  <div id="modal" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form id="modalForm" class="sheet" novalidate>
       <h2 id="modalTitle"></h2>
       <div id="modalBody"></div>
       <div class="modal-actions">
@@ -43,7 +43,7 @@
         <button type="submit" class="btn primary" id="modalOk">저장</button>
       </div>
     </form>
-  </dialog>
+  </div>
 
   <div id="toast" class="toast" hidden></div>
   <input type="file" id="importFile" accept="application/json,.json" hidden />

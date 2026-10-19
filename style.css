@@ -146,13 +146,23 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 16px; }
   background: var(--accent); color: #fff; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,.2); cursor: pointer;
 }
 
-dialog {
-  border: 0; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 24px));
-  background: var(--card); color: var(--text); max-height: calc(100vh - 40px);
+.overlay {
+  position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.45);
+  display: flex; align-items: flex-end; justify-content: center;
 }
-dialog::backdrop { background: rgba(0,0,0,.45); }
-dialog form { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
-dialog h2 { font-size: 17px; }
+.overlay[hidden] { display: none; }
+.sheet {
+  width: min(560px, 100%); max-height: 88vh; overflow: hidden;
+  background: var(--card); color: var(--text); border-radius: 18px 18px 0 0;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 12px;
+}
+#modalBody { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 2px; }
+@media (min-width: 600px) { .overlay { align-items: center; } .sheet { border-radius: 18px; } }
+.sheet h2 { font-size: 17px; }
+body.modal-open { overflow: hidden; }
+/* 탭 지연·더블탭 확대 방지 */
+button, a, .item, .check, .filters button, input, select, label { touch-action: manipulation; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field > span { font-size: 13px; color: var(--muted); font-weight: 600; }
 .field input, .field select, .field textarea {
@@ -168,11 +178,12 @@ dialog h2 { font-size: 17px; }
   min-width: 0; max-width: 100%; min-height: 44px; display: block; text-align: left;
 }
 .field input::-webkit-date-and-time-value { text-align: left; margin: 0; }
-.modal-actions { display: flex; gap: 8px; align-items: center; position: sticky; bottom: 0; background: var(--card); padding-top: 6px; }
+.modal-actions { display: flex; gap: 8px; align-items: center; flex: none; padding-top: 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+.item { -webkit-tap-highlight-color: transparent; }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-  background: #16242b; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 20;
+  background: #16242b; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 40;
   max-width: calc(100vw - 32px);
 }
 a { color: var(--primary); }

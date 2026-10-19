@@ -290,7 +290,18 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2200);
 }
 
-const modal = $('#modal');
+const modalEl = $('#modal');
+// iOS Safari의 <dialog> 버그(닫은 뒤 탭이 안 먹힘)를 피하려고 직접 만든 팝업 사용
+const modal = {
+  get open() { return !modalEl.hidden; },
+  showModal() { modalEl.hidden = false; document.body.classList.add('modal-open'); $('#modalBody').scrollTop = 0; },
+  close() {
+    if (document.activeElement && modalEl.contains(document.activeElement)) document.activeElement.blur();
+    modalEl.hidden = true; document.body.classList.remove('modal-open');
+  },
+};
+modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modal.close(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.open) modal.close(); });
 let modalHandlers = {};
 function openForm({ title, fields, values = {}, onSave, onDelete, okText = '저장' }) {
   $('#modalTitle').textContent = title;
@@ -325,7 +336,7 @@ function readFields(fields) {
   const out = {};
   for (const f of fields) {
     if (!f.k) continue;
-    const el = $(`[name="${f.k}"]`, modal);
+    const el = $(`[name="${f.k}"]`, modalEl);
     if (!el) continue;
     if (f.type === 'checkbox') out[f.k] = el.checked;
     else if (f.type === 'file') out[f.k] = el.files;
@@ -338,6 +349,8 @@ $('#modalForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const { fields, onSave } = modalHandlers;
   if (!onSave) return modal.close();
+  const missing = fields.find((f) => f.required && !String($(`[name="${f.k}"]`, modalEl)?.value || '').trim());
+  if (missing) { toast(`${missing.label}을(를) 입력해 주세요`); $(`[name="${missing.k}"]`, modalEl)?.focus(); return; }
   const btn = $('#modalOk'); btn.disabled = true;
   try { if ((await onSave(readFields(fields))) !== false) { modal.close(); render(); } }
   finally { btn.disabled = false; }

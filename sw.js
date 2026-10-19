@@ -1,5 +1,5 @@
 // 오프라인에서도 앱이 열리도록 캐시 (섬에서 인터넷이 약할 때 대비)
-const CACHE = 'boracay-v3';
+const CACHE = 'boracay-v4';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon.svg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
