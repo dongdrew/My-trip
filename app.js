@@ -21,8 +21,8 @@ const dayDiff = (a, b) => Math.round((a - b) / 86400000);
 
 /* ---------- 기본 데이터 ---------- */
 function seed() {
-  const t = Date.now();
-  const mk = (arr) => arr.map((o) => ({ id: uid(), updatedAt: t, ...o }));
+  // 예시 데이터는 고정 id를 써서 두 폰의 데이터를 합칠 때 중복되지 않게 함
+  const mk = (col, arr) => arr.map((o, i) => ({ id: `seed-${col}-${i}`, updatedAt: 1, ...o }));
   return {
     trip: {
       title: '보라카이 가족여행', start: '', end: '', nights: 4,
@@ -32,7 +32,7 @@ function seed() {
       updatedAt: 0,
     },
     deleted: {},
-    schedule: mk([
+    schedule: mk('schedule', [
       { day: 1, time: '09:00', title: '인천공항 출발', place: '인천국제공항', memo: '탑승 2~3시간 전 도착' },
       { day: 1, time: '13:00', title: '칼리보/카티클란 공항 도착 → 픽업', place: '칼리보 국제공항', memo: '픽업 기사 연락처 확인' },
       { day: 1, time: '16:00', title: '제티포트 → 보라카이 입도, 숙소 체크인', place: '카티클란 제티포트', memo: '환경세·터미널피 현금 준비, 숙소 바우처 제시' },
@@ -49,7 +49,7 @@ function seed() {
       { day: 5, time: '10:00', title: '체크아웃 & 기념품 쇼핑', place: '디몰', memo: '' },
       { day: 5, time: '13:00', title: '공항 이동 → 귀국', place: '카티클란 제티포트', memo: '' },
     ]),
-    bookings: mk([
+    bookings: mk('bookings', [
       { type: '항공', title: '인천 ↔ 칼리보/카티클란 왕복 (6명)', date: '', time: '', provider: '', confirmation: '', price: '', currency: 'KRW', status: '예약 필요', link: '', memo: '아이 좌석 같이 배정' },
       { type: '숙소', title: '리조트 (패밀리룸 2개 / 커넥팅룸)', date: '', time: '', provider: '', confirmation: '', price: '', currency: 'KRW', status: '예약 필요', link: '', memo: '키즈풀·조식 포함 여부 확인' },
       { type: '픽업·샌딩', title: '공항 ↔ 리조트 픽업·샌딩', date: '', time: '', provider: '', confirmation: '', price: '', currency: 'KRW', status: '예약 필요', link: '', memo: '밴 1대로 6명 + 짐' },
@@ -57,7 +57,7 @@ function seed() {
       { type: '스파·마사지', title: '마사지', date: '', time: '', provider: '', confirmation: '', price: '', currency: 'PHP', status: '예약 필요', link: '', memo: '' },
     ]),
     expenses: [],
-    places: mk([
+    places: mk('places', [
       { name: '화이트 비치', en: 'White Beach Boracay', category: '해변', memo: '보라카이 대표 해변, 일몰 명소. 스테이션 1~3로 구분', visited: false },
       { name: '스테이션 1', en: 'Station 1 Boracay', category: '해변', memo: '모래가 가장 곱고 한적한 편', visited: false },
       { name: '윌리스 락', en: "Willy's Rock Boracay", category: '해변', memo: '스테이션 1의 바위 성모상, 사진 명소', visited: false },
@@ -75,7 +75,7 @@ function seed() {
       { name: '칼리보 국제공항', en: 'Kalibo International Airport', category: '교통', memo: '제티포트까지 차로 약 1.5~2시간', visited: false },
     ]),
     memories: [],
-    checklist: mk([
+    checklist: mk('checklist', [
       { text: '여권 (유효기간 6개월 이상)', cat: '서류', done: false },
       { text: 'eTravel 등록 (출국 72시간 이내, 6명 모두)', cat: '서류', done: false },
       { text: '숙소 바우처 출력/캡처 (입도 시 확인)', cat: '서류', done: false },
@@ -101,6 +101,53 @@ let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { S = seed(); }
 for (const c of COLS) S[c] ||= [];
 S.deleted ||= {};
+S.patches ||= [];
+
+// 예전 버전(랜덤 id)으로 만든 예시 항목을 고정 id로 바꿔서, 두 폰을 합칠 때 중복되지 않게 함
+(function migrateSeedIds() {
+  const keyOf = { schedule: (x) => `${x.day}|${x.title}`, bookings: (x) => x.title, places: (x) => x.name, checklist: (x) => x.text };
+  const base = seed();
+  for (const [col, key] of Object.entries(keyOf)) {
+    const seedIds = new Map(base[col].map((x) => [key(x), x.id]));
+    const used = new Set(S[col].map((x) => x.id));
+    for (const x of S[col]) {
+      const sid = seedIds.get(key(x));
+      if (sid && !String(x.id).startsWith('seed-') && !used.has(sid)) { used.delete(x.id); x.id = sid; used.add(sid); }
+    }
+  }
+})();
+
+/* ---------- 확정된 예약 반영 (앱을 열면 한 번 자동 적용) ----------
+ * 고정 id + 고정 시간으로 넣어서 두 폰에서 각각 적용돼도 합칠 때 중복되지 않음 */
+const PATCH_TS = Date.parse('2026-10-19T00:00:00Z');
+const PATCHES = [
+  {
+    id: 'flight-NMHUN2',
+    apply() {
+      Object.assign(S.trip, { start: '2026-11-26', end: '2026-11-30', updatedAt: Date.now() });
+      // 예시로 넣어 둔 항공 예약과 첫날/마지막날 이동 일정은 실제 항공편으로 교체
+      for (const id of ['seed-bookings-0']) remove('bookings', id);
+      for (const id of ['seed-schedule-0', 'seed-schedule-1', 'seed-schedule-13', 'seed-schedule-14']) remove('schedule', id);
+      const put = (col, item) => { S[col] = S[col].filter((x) => x.id !== item.id); delete S.deleted[item.id]; S[col].push({ updatedAt: PATCH_TS, ...item }); };
+      put('bookings', {
+        id: 'bk-flight-NMHUN2', type: '항공', title: '티웨이 TW125/TW126 인천 ↔ 칼리보 왕복',
+        date: '2026-11-26', time: '09:20', provider: '티웨이항공', confirmation: 'NMHUN2', price: '', currency: 'KRW', status: '결제 완료', link: '',
+        memo: '가는 편 TW125 · 11/26(목) 09:20 인천 T1 → 12:55 칼리보 (4시간 35분, 직항)\n오는 편 TW126 · 11/30(월) 13:55 칼리보 → 19:05 인천 T1 (4시간 10분, 직항)\n※ 이 예약번호는 1명분 — 다른 가족 예약번호도 확인해서 추가하세요',
+      });
+      const sch = [
+        { id: 'sc-fl-1', day: 1, time: '06:20', title: '인천공항 T1 도착 (출발 3시간 전)', place: '인천국제공항 제1터미널', memo: '티웨이 카운터 체크인, 짐 부치기' },
+        { id: 'sc-fl-2', day: 1, time: '09:20', title: '✈️ TW125 인천 출발', place: '인천국제공항 제1터미널', memo: '예약번호 NMHUN2 · 비행 4시간 35분' },
+        { id: 'sc-fl-3', day: 1, time: '12:55', title: '칼리보 공항 도착 → 픽업', place: '칼리보 국제공항', memo: 'eTravel QR 준비 · 제티포트까지 차로 1.5~2시간' },
+        { id: 'sc-fl-4', day: 5, time: '07:30', title: '체크아웃 & 픽업 출발', place: '숙소', memo: '전날 밤 짐 싸 두기, 기념품은 Day 4에' },
+        { id: 'sc-fl-5', day: 5, time: '08:30', title: '제티포트 → 칼리보 공항 이동', place: '카티클란 제티포트', memo: '배 + 차로 약 2~2.5시간' },
+        { id: 'sc-fl-6', day: 5, time: '11:30', title: '칼리보 공항 체크인', place: '칼리보 국제공항', memo: '출발 2시간 전까지 도착' },
+        { id: 'sc-fl-7', day: 5, time: '13:55', title: '✈️ TW126 칼리보 출발', place: '칼리보 국제공항', memo: '비행 4시간 10분' },
+        { id: 'sc-fl-8', day: 5, time: '19:05', title: '인천공항 T1 도착 🏠', place: '인천국제공항 제1터미널', memo: '' },
+      ];
+      for (const x of sch) put('schedule', x);
+    },
+  },
+];
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('저장 공간이 부족해요'); } };
 
 function upsert(col, item) {
@@ -114,6 +161,9 @@ function remove(col, id) {
   S.deleted[id] = Date.now();
   save();
 }
+
+for (const p of PATCHES) if (!S.patches.includes(p.id)) { p.apply(); S.patches.push(p.id); }
+save();
 
 /* ---------- 사진 (IndexedDB) ---------- */
 const photoDB = (() => {
@@ -481,7 +531,7 @@ const views = {
               <div class="title">${esc(b.title)}</div>
               <div class="meta">${statusChip(b.status)}${b.date ? prettyDate(b.date) : '날짜 미정'}${b.time ? ' ' + esc(b.time) : ''}${b.provider ? ' · ' + esc(b.provider) : ''}</div>
               ${b.confirmation ? `<div class="meta">예약번호 <b>${esc(b.confirmation)}</b> <button class="btn ghost sm" data-action="copy" data-text="${esc(b.confirmation)}">복사</button></div>` : ''}
-              ${b.memo ? `<div class="meta">${esc(b.memo)}</div>` : ''}
+              ${b.memo ? `<div class="meta" style="white-space:pre-wrap">${esc(b.memo)}</div>` : ''}
               ${b.link ? `<div class="meta"><a href="${esc(b.link)}" target="_blank" rel="noopener" data-stop>바우처/예약 페이지 열기 ↗</a></div>` : ''}
             </div>
             <div class="right">${b.price !== '' && b.price != null ? money(b.price, b.currency) : ''}</div>
