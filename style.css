@@ -176,3 +176,7 @@ dialog h2 { font-size: 17px; }
   max-width: calc(100vw - 32px);
 }
 a { color: var(--primary); }
+.links { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.meta.menu { color: var(--text); margin-top: 2px; }
+.item .right .btn { display: block; margin-bottom: 4px; text-align: center; }
+a.btn { text-decoration: none; display: inline-block; }

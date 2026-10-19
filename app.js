@@ -120,6 +120,8 @@ S.patches ||= [];
 /* ---------- 확정된 예약 반영 (앱을 열면 한 번 자동 적용) ----------
  * 고정 id + 고정 시간으로 넣어서 두 폰에서 각각 적용돼도 합칠 때 중복되지 않음 */
 const PATCH_TS = Date.parse('2026-10-19T00:00:00Z');
+const putFixed = (col, item, ts = PATCH_TS) => { S[col] = S[col].filter((x) => x.id !== item.id); delete S.deleted[item.id]; S[col].push({ updatedAt: ts, ...item }); };
+const put = putFixed;
 const PATCHES = [
   {
     id: 'flight-NMHUN2',
@@ -128,7 +130,6 @@ const PATCHES = [
       // 예시로 넣어 둔 항공 예약과 첫날/마지막날 이동 일정은 실제 항공편으로 교체
       for (const id of ['seed-bookings-0']) remove('bookings', id);
       for (const id of ['seed-schedule-0', 'seed-schedule-1', 'seed-schedule-13', 'seed-schedule-14']) remove('schedule', id);
-      const put = (col, item) => { S[col] = S[col].filter((x) => x.id !== item.id); delete S.deleted[item.id]; S[col].push({ updatedAt: PATCH_TS, ...item }); };
       put('bookings', {
         id: 'bk-flight-NMHUN2', type: '항공', title: '티웨이 TW125/TW126 인천 ↔ 칼리보 왕복',
         date: '2026-11-26', time: '09:20', provider: '티웨이항공', confirmation: 'NMHUN2', price: '', currency: 'KRW', status: '결제 완료', link: '',
@@ -145,6 +146,43 @@ const PATCHES = [
         { id: 'sc-fl-8', day: 5, time: '19:05', title: '인천공항 T1 도착 🏠', place: '인천국제공항 제1터미널', memo: '' },
       ];
       for (const x of sch) put('schedule', x);
+    },
+  },
+  {
+    id: 'meals-v1',
+    apply() {
+      const TS = Date.parse('2026-10-19T12:00:00Z');
+      // 예시의 '산책 & 저녁', '디몰 점심', '디탈리파파' 일정은 식당 정보가 들어간 일정으로 교체
+      for (const id of ['seed-schedule-3', 'seed-schedule-5', 'seed-schedule-9']) remove('schedule', id);
+      const meals = [
+        { id: 'sc-walk-d1', day: 1, time: '18:00', title: '화이트비치 산책 & 일몰', place: '화이트 비치', memo: '' },
+        { id: 'sc-meal-d1-dinner', day: 1, time: '19:00', title: '🍕 저녁: 아리아 (이탈리안)', place: '디몰', map: "Aria Cucina Italiana D'Mall Boracay",
+          menu: '화덕 피자, 토마토 파스타, 젤라토 — 첫날 피곤할 때 아이들도 무난', memo: '디몰 입구 쪽, 숙소 가까우면 걸어서' },
+        { id: 'sc-meal-d2-snack', day: 2, time: '10:30', title: '🥭 간식: 조나스 망고셰이크', place: '스테이션 1', map: "Jonah's Fruit Shake Boracay",
+          menu: '망고셰이크, 바나나·망고 믹스, 과일 셰이크 40여 종', memo: '물놀이 후 쉬어가기' },
+        { id: 'sc-meal-d2-lunch', day: 2, time: '12:00', title: '🍖 점심: 아이 러브 바비큐', place: '디몰', map: "I Love BBQ D'Mall Boracay",
+          menu: '폭립, 어니언링, 꼬치구이 + 망고셰이크', memo: '한국인에게 유명, 가격 부담 적음' },
+        { id: 'sc-meal-d2-dinner', day: 2, time: '19:00', title: '🌅 저녁: 차차스 비치 카페', place: '스테이션 2 (코스트 보라카이)', map: "Cha Cha's Beach Cafe Boracay",
+          menu: '해산물 그릴, 필리핀식 바비큐, 칵테일 / 아이: 파스타·감자튀김', memo: '해변 자리는 미리 예약 추천 (6명)' },
+        { id: 'sc-meal-d3-dinner', day: 3, time: '18:30', title: '🦐 저녁: 디탈리파파 해산물 시장', place: '디탈리파파', map: "D'Talipapa Boracay",
+          menu: '갈릭버터 새우, 오징어구이, 크랩, 망고 / 아이: 새우튀김·볶음밥', memo: '시장에서 무게 단위로 사고 옆 식당(파루토)에 조리 맡기기 · 흥정 필수' },
+        { id: 'sc-meal-d4-brunch', day: 4, time: '08:30', title: '☕ 브런치: 리얼 커피 & 티 카페', place: '스테이션 1', map: 'Real Coffee and Tea Cafe Boracay',
+          menu: '칼라만시 머핀(대표 메뉴), 커피, 브런치', memo: '머핀은 선물용으로 포장도 인기' },
+        { id: 'sc-meal-d4-lunch', day: 4, time: '12:30', title: '🍛 점심: 스모크 (필리핀 가정식)', place: '디몰', map: "Smoke Resto D'Mall Boracay",
+          menu: '시시그, 아도보, 칼라마리 / 아이: 치킨·갈릭라이스', memo: '저렴한 필리핀 음식 체험' },
+        { id: 'sc-meal-d4-dinner', day: 4, time: '17:30', title: '🌇 저녁: 스파이더 하우스 (선셋)', place: '디니위드 비치', map: 'Spider House Boracay',
+          menu: '피자, 파스타, 해산물 + 일몰', memo: '절벽 위 구조라 아이 손 꼭 잡기 · 해 지기 전 도착' },
+      ];
+      for (const x of meals) putFixed('schedule', x, TS);
+      const places = [
+        { id: 'pl-aria', name: '아리아 (이탈리안)', en: "Aria Cucina Italiana D'Mall Boracay", category: '맛집', memo: '화덕 피자, 파스타, 젤라토' },
+        { id: 'pl-ilovebbq', name: '아이 러브 바비큐', en: "I Love BBQ D'Mall Boracay", category: '맛집', memo: '폭립, 어니언링' },
+        { id: 'pl-chachas', name: '차차스 비치 카페', en: "Cha Cha's Beach Cafe Boracay", category: '맛집', memo: '해변 선셋 디너' },
+        { id: 'pl-realcoffee', name: '리얼 커피 & 티 카페', en: 'Real Coffee and Tea Cafe Boracay', category: '카페', memo: '칼라만시 머핀' },
+        { id: 'pl-smoke', name: '스모크 (필리핀 가정식)', en: "Smoke Resto D'Mall Boracay", category: '맛집', memo: '시시그, 아도보 — 저렴' },
+        { id: 'pl-spider', name: '스파이더 하우스', en: 'Spider House Boracay', category: '맛집', memo: '디니위드 절벽 위 선셋 레스토랑' },
+      ];
+      for (const x of places) putFixed('places', { visited: false, ...x }, TS);
     },
   },
 ];
@@ -321,6 +359,9 @@ const forms = {
     { k: 'time', label: '시간', type: 'time', half: true },
     { k: 'title', label: '할 일', ph: '예) 호핑투어', required: true },
     { k: 'place', label: '장소', ph: '예) 화이트 비치' },
+    { k: 'menu', label: '추천 메뉴 (식사일 때)', ph: '예) 망고셰이크, 폭립' },
+    { k: 'map', label: '지도 검색어 (영문 추천)', ph: "ex) I Love BBQ D'Mall Boracay" },
+    { k: 'link', label: '링크', type: 'url', ph: 'https:// (메뉴판, 예약 페이지 등)' },
     { k: 'memo', label: '메모', type: 'textarea' },
     { k: 'done', label: '완료', type: 'checkbox' },
   ],
@@ -413,6 +454,8 @@ function render() {
 
 const fab = (col, label = '+') => `<button class="fab" data-action="add" data-col="${col}" aria-label="추가">${label}</button>`;
 const filterBar = (key, opts) => `<div class="filters">${opts.map(([v, l]) => `<button data-action="filter" data-key="${key}" data-val="${esc(v)}" class="${String(ui[key]) === String(v) ? 'active' : ''}">${esc(l)}</button>`).join('')}</div>`;
+const reviewUrl = (q) => `https://m.search.naver.com/search.naver?query=${encodeURIComponent('보라카이 ' + q)}`;
+const linkBtns = (mapQ, reviewQ, link) => `<div class="links">${mapQ ? `<a class="btn sm" href="${mapUrl(mapQ)}" target="_blank" rel="noopener" data-stop>🗺️ 지도</a>` : ''}${reviewQ ? `<a class="btn sm" href="${reviewUrl(reviewQ)}" target="_blank" rel="noopener" data-stop>📝 후기</a>` : ''}${link ? `<a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener" data-stop>🔗 링크</a>` : ''}</div>`;
 const mapUrl = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 const BOOK_EMOJI = { '항공': '✈️', '숙소': '🏨', '픽업·샌딩': '🚐', '투어·액티비티': '🚤', '식당': '🍽️', '스파·마사지': '💆', '기타': '📌' };
 const PLACE_EMOJI = { '해변': '🏖️', '맛집': '🍽️', '카페': '☕', '관광': '🗺️', '쇼핑': '🛍️', '숙소': '🏨', '교통': '⛴️', '기타': '📍' };
@@ -596,6 +639,7 @@ const views = {
             <div class="right">
               <button class="btn sm" data-action="show-map" data-q="${esc(p.en || p.name + ' Boracay')}">지도</button>
               <a class="btn sm" href="${mapUrl(p.en || p.name + ' Boracay')}" target="_blank" rel="noopener" data-stop>길찾기</a>
+              ${p.category === '맛집' || p.category === '카페' ? `<a class="btn sm" href="${reviewUrl(p.name.replace(/\s*\(.*\)$/, ''))}" target="_blank" rel="noopener" data-stop>후기</a>` : ''}
             </div>
           </li>`).join('')}</ul>` : '<p class="empty">장소가 없어요</p>'}
       </section>
@@ -623,6 +667,8 @@ function schedItem(x) {
     <div class="body">
       <div class="title">${esc(x.title)}</div>
       ${x.place || x.memo ? `<div class="meta">${x.place ? '📍' + esc(x.place) : ''}${x.place && x.memo ? ' · ' : ''}${esc(x.memo || '')}</div>` : ''}
+      ${x.menu ? `<div class="meta menu">🍽️ ${esc(x.menu)}</div>` : ''}
+      ${x.map || x.link ? linkBtns(x.map, x.map ? x.title.replace(/^[^\p{L}]*(저녁|점심|간식|브런치|아침)?:?\s*/u, '').replace(/\s*\(.*\)$/, '') : '', x.link) : ''}
     </div>
   </li>`;
 }
