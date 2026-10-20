@@ -185,6 +185,26 @@ const PATCHES = [
       for (const x of places) putFixed('places', { visited: false, ...x }, TS);
     },
   },
+  {
+    id: 'hotel-henann-v1',
+    apply() {
+      const TS = Date.parse('2026-10-20T00:00:00Z');
+      remove('bookings', 'seed-bookings-1'); // 예시 '리조트' 예약을 실제 숙소로 교체
+      putFixed('bookings', {
+        id: 'bk-hotel-henann', type: '숙소', title: '헤난 가든 리조트 — 프리미어 다이렉트 풀 액세스룸',
+        date: '2026-11-26', time: '15:00', provider: '', confirmation: '', price: '', currency: 'KRW', status: '예약 완료',
+        link: 'https://www.google.com/maps/search/?api=1&query=Henann+Garden+Resort+Boracay',
+        memo: '체크인 11/26(목) 15:00 · 체크아웃 11/30(월) 12:00 (4박)\n스테이션 2 — 화이트비치·디몰 걸어서 5~6분\n방 테라스에서 수영장으로 바로 입장 (수영장 08:00~22:00)\n※ 방 개수·예약번호·조식 포함 여부 확인해서 입력하세요',
+      }, TS);
+      putFixed('places', { id: 'pl-henann', name: '헤난 가든 리조트 (숙소)', en: 'Henann Garden Resort Boracay', category: '숙소', memo: '스테이션 2 · 프리미어 다이렉트 풀 액세스룸', visited: false }, TS);
+      // 사용자가 직접 고치지 않은 일정만 숙소 이름으로 업데이트
+      const upd = (id, changes) => { const x = S.schedule.find((i) => i.id === id); if (x && (x.updatedAt || 0) <= TS) putFixed('schedule', { ...x, ...changes }, TS); };
+      upd('seed-schedule-2', { title: '제티포트 → 보라카이 입도, 헤난 가든 체크인', memo: '환경세·터미널피 현금 준비, 숙소 바우처 제시 · 체크인 15:00부터' });
+      upd('seed-schedule-6', { title: '방 앞 수영장에서 물놀이 & 아이들 낮잠', place: '헤난 가든 리조트', memo: '다이렉트 풀 액세스룸 — 테라스에서 바로 입수' });
+      upd('sc-fl-4', { place: '헤난 가든 리조트' });
+      upd('sc-walk-d1', { memo: '헤난 가든에서 해변까지 걸어서 5분' });
+    },
+  },
 ];
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('저장 공간이 부족해요'); } };
 

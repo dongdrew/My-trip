@@ -49,7 +49,7 @@ h1, h2, h3 { margin: 0; }
 .topbar .muted { color: rgba(255,255,255,.85); margin: 2px 0 0; font-size: 13px; }
 .icon-btn { background: rgba(255,255,255,.2); border: 0; border-radius: 10px; font-size: 18px; padding: 6px 10px; cursor: pointer; }
 
-main { max-width: 720px; margin: 0 auto; padding: 14px 16px; }
+main { max-width: 720px; margin: 0 auto; padding: 14px 16px 80px; }
 
 .tabs {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 5;
