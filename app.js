@@ -9,6 +9,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const KEY = 'boracay-trip-v1';
+const APP_VERSION = 6;
 const COLS = ['schedule', 'bookings', 'expenses', 'places', 'memories', 'checklist'];
 
 /* ---------- 날짜 ---------- */
@@ -314,10 +315,15 @@ const modalEl = $('#modal');
 // iOS Safari의 <dialog> 버그(닫은 뒤 탭이 안 먹힘)를 피하려고 직접 만든 팝업 사용
 const modal = {
   get open() { return !modalEl.hidden; },
-  showModal() { modalEl.hidden = false; document.body.classList.add('modal-open'); $('#modalBody').scrollTop = 0; },
+  scrollY: 0,
+  showModal() { this.scrollY = window.scrollY; modalEl.hidden = false; $('#modalBody').scrollTop = 0; },
   close() {
     if (document.activeElement && modalEl.contains(document.activeElement)) document.activeElement.blur();
-    modalEl.hidden = true; document.body.classList.remove('modal-open');
+    modalEl.hidden = true;
+    // 아이폰: 키보드/확대 후 화면과 터치 위치가 어긋나는 것을 스크롤로 다시 맞춤
+    const y = this.scrollY;
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    setTimeout(() => window.scrollTo(0, y), 300);
   },
 };
 modalEl.addEventListener('click', (e) => { if (e.target === modalEl) modal.close(); });
@@ -569,7 +575,8 @@ const views = {
           <li>바다 수영 땐 아이 구명조끼, 해파리 주의</li>
           <li>두 가족이 교대로 아이 보면 어른들 마사지 가능!</li>
         </ul>
-      </section>`;
+      </section>
+      <p class="version">앱 버전 v${APP_VERSION}</p>`;
   },
 
   schedule() {
@@ -857,6 +864,19 @@ document.addEventListener('click', async (e) => {
 $('#importFile').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
 window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (t && t !== tab && views[t]) { tab = t; render(); } });
 
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+// 홈 화면 앱은 예전 버전을 오래 붙잡고 있어서, 열 때마다 새 버전을 확인하고 있으면 자동으로 새로고침
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded || modal.open) return;
+    reloaded = true; location.reload();
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    const check = () => reg.update().catch(() => {});
+    check();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  }).catch(() => {});
+}
 
 render();

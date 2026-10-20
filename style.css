@@ -160,13 +160,13 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 16px 80px; }
 #modalBody { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 2px; }
 @media (min-width: 600px) { .overlay { align-items: center; } .sheet { border-radius: 18px; } }
 .sheet h2 { font-size: 17px; }
-body.modal-open { overflow: hidden; }
 /* 탭 지연·더블탭 확대 방지 */
 button, a, .item, .check, .filters button, input, select, label { touch-action: manipulation; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field > span { font-size: 13px; color: var(--muted); font-weight: 600; }
 .field input, .field select, .field textarea {
-  font: inherit; color: var(--text); background: var(--bg);
+  font: inherit; font-size: 16px; /* 16px 미만이면 아이폰이 입력할 때 화면을 확대함 */
+  color: var(--text); background: var(--bg);
   border: 1px solid var(--line); border-radius: 10px; padding: 10px; width: 100%;
 }
 .field textarea { min-height: 80px; resize: vertical; }
@@ -191,3 +191,5 @@ a { color: var(--primary); }
 .meta.menu { color: var(--text); margin-top: 2px; }
 .item .right .btn { display: block; margin-bottom: 4px; text-align: center; }
 a.btn { text-decoration: none; display: inline-block; }
+
+.version { text-align: center; font-size: 12px; color: var(--muted); margin: 8px 0 0; }
